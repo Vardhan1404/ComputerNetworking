@@ -1,0 +1,123 @@
+Q.1 Describe what happens at every step of our network model, when a node on
+one network establishes a TCP connection with a node on another network. You
+can assume that the two networks are both connected to the same router.
+
+ANS: 
+In this scenario, we will refer to node 1 as “computer 1”, which in this
+example will play the role of the client requesting data from node 2. Node 2
+will be the server in this scenario, and will be referred to as “computer 2”.
+Computer 1 is on “network A”, while computer 2 is on “network B”, but both
+networks are connected via the same router. Computer 1 is seeking to establish
+a TCP connection with computer 2, to access a web page that is being served by
+computer 2.
+
+To make this connection happen, it all starts with the physical layer, which
+makes the connections possible through the cabling, computers, routers, and 
+server hardware that are physically and wirelessly connected. Through the 
+configuration of these physical layer elements, the computers are able to 
+send data back and forth between network A and network B.
+
+With the physical layer components in place, when computer 1 seeks to request 
+information from computer 2, its web browser seeks to establish a TCP connection 
+by speaking with the local network stack, which is responsible for handling the 
+networking functions of the operating system. The web browser knows that it is 
+seeking to connect at computer 2’s IP address via a TCP port, as this information 
+is encoded into to the URL that computer 1 is seeking to fetch data from.
+
+As a first step in establishing a TCP connection with computer 2, the web browser 
+of computer 1 examines its own subnet at the data link layer level and sees that 
+the IP address destination for which it is seeking to establish a TCP connection 
+lives on another network. In realizing this, computer 1 now knows that it must 
+send its data request to its gateway, so it can be routed to the remote network 
+where computer B lives. Computer 1 then examines the gateway configuration number 
+that is present between network A and the router. It looks at its ARP table to 
+determine what MAC address aligns with this configuration number, and if it 
+doesn’t find a corresponding entry in its ARP table, then it will send out an ARP 
+discovery request to every node on network A (since this is the local network for computer 1).
+ 
+When the router (which is one of the nodes on network A) receives computer 1’s ARP request, 
+it sees that it is currently assigned the IP address that computer A is connected with, 
+so the router responds to computer 1 to let it know its MAC address. Computer 1 then 
+receives this response, which makes it aware of the hardware address of computer 1’s 
+router. With this known, computer 1 is ready to start building the outbound packet 
+that will be sent to computer 2 to fetch the data needed.
+
+Computer 1 will then open an outbound TCP port to establish a socket connection with 
+the IP address and TCP port of computer 2. To ensure the connection is established 
+to the correct place, the networking layer comes into play here because a TCP 
+datagram header must be constructed, which will specify the source port of computer 1 
+and the destination port of computer 2 for the TCP connection. In addition to specifying 
+the source and destination port numbers in the TCP datagram header, a sequence number is set, 
+the “syn” control flag is set, and a checksum for the segment is calculated and recorded in 
+the checksum field. Then, this newly constructed TCP segment is submitted to the IP datagram 
+that now must be constructed. An IP datagram header is constructed, within which the source IP address 
+(computer 1’s network) and the destination IP address (computer 2’s network) are specified. 
+Additionally, the TTL field of the IP datagram is set to 64. Finally, the recently constructed TCP 
+segment is inserted as the data payload for the IP datagram that was just built. With the IP datagram 
+and TCP segment combined, a checksum is calculated for the entire IP datagram, so that the data 
+integrity of the request can be checked along the way, as it moves from network A to network B.
+
+With the IP datagram constructed, the next step is for computer 1 to get the IP datagram to 
+its router, which is the gateway connecting network A to network B, where computer 2 is 
+connected. Based on the ARP request response it received earlier, computer 1 knows its 
+router’s MAC address. The data link layer comes into play now, as the computer must 
+construct an Ethernet frame to get the IP datagram to the known gateway, so it can 
+then be further routed to computer 2’s network. The Ethernet frame that is constructed 
+will specify the source MAC address (which in this case, is the MAC address of computer 1) 
+and the destination MAC address (which is the MAC address of the router), so the path of 
+the Ethernet frame is clearly defined. The final step of the Ethernet frame’s construction 
+is the insertion of the IP datagram into the data payload section of the Ethernet frame. 
+Again, to ensure the data integrity of all of the combined elements up to this point, 
+another checksum is calculated (this time on the entire Ethernet frame), before the Ethernet frame is sent.
+
+With the checksum complete on the Ethernet frame, it is now ready to be sent across the physical 
+layer components that connect computer 1 to network A to the router. Specifically, the Ethernet frame 
+will be converted into binary data that is transmitted via modulating electrical signals that run 
+across the CAT6 cabling which connects computer 1 to a network switch of network A.  When 
+network A’s network switch receives the ethernet frame, it inspects it and observes the 
+destination MAC address, which is the router that was specified. The switch knows which of its 
+interfaces that the router, which matches the destination MAC address, is connected to, so it 
+then forwards the Ethernet frame across the cable that is connected from the network switch to the router.
+
+When the router receives the ethernet frame, it recognizes that its own MAC address is specified a
+s the destination, so it knows that it was intended to receive it and, therefore, performs a checksum 
+calculation. The router then compares its checksum results against the checksum results of the 
+ethernet frame, and confirms that they match, meaning all of the data within the ethernet frame was successfully 
+transmitted to the router. Then, the router strips away the ethernet frame, leaving just the IP datagram, 
+and performs another checksum to compare against the checksum of the IP datagram. This checksum confirms 
+that all of the IP datagram data also arrived successfully.
+
+From here, the router inspects the destination IP address that is specified within the IP datagram and 
+searches its own routing table, to determine the quickest path for reaching network B, where Computer 2 resides. 
+The router sees that the IP address of network B is on a locally connected network (since both network A and 
+network B are connected to the same router). It then decrements the TTL value from 64 to 63. After decrementing 
+the TTL, another checksum is calculated and a new IP datagram is created in the process. The new IP datagram is 
+then encapsulated by a new ethernet frame, which specifies the router’s MAC address as the source MAC address 
+and computer 2’s MAC address as the destination MAC address. Before being sent across network B to computer 2, 
+the new IP datagram is once again inserted as the data payload of the newly constructed ethernet frame and a checksum is completed.
+
+The ethernet frame is then sent out to network B. Upon arriving at network B’s switch, it inspects the 
+destination MAC address and sees that it belongs to computer 2. It recognizes that computer 2 is also 
+connected to the switch, so it then forwards the ethernet frame across the cable that connects the switch 
+of network B to computer 2. When computer 2 receives the frame, it recognizes that its own MAC address 
+was specified as the destination, so it knows that this ethernet frame was intended for it. Recognizing this, 
+computer 2 then strips away the ethernet frame to inspect the IP datagram and performs a checksum to determine 
+that the data arrived in tact. Following this, computer 2 examines the destination address specified within 
+the IP datagram and sees that its own IP address was specified, further confirming that it was intended to receive the data sent.
+
+Then, computer 2 strips away the IP datagram layer, leaving just the TCP segment of the data sent. 
+It performs a checksum against the TCP layer and confirms that all of the data within the TCP segment 
+arrived in tact. Next, computer 2 inspects the destination port which is specified within the TCP 
+segment, which in this case is port 80. Computer 2 checks its own port 80 to see if there is an 
+open socket at that port. In this case, there is an open socket at port 80, which has been set 
+to the “listen” state by the server. Then, computer 2 recognizes that the “SYN” flag is set 
+within the control flags, so it knows it must respond with a “SYN/ACK” to computer 1, in order 
+to continue establishing the TCP connection. Computer 2 checks the sequence number of the TCP segment, 
+so it knows what number to include in the acknowledgement number field of its SYN/ACK response.
+
+To finish establishing the TCP connection, computer 2 would then go through all of the same steps 
+that were just outlined for computer 1, to construct a new TCP segment, IP datagram, and ethernet frame, 
+to send the TCP segment with a “SYN/ACK” response back to computer 1. Then, after receiving that “SYN/ACK” 
+response, computer 1 would repeat the process yet again, this time to send an “ACK” response back to 
+computer 2. Once computer 2 received the “ACK” response from computer 1, the three-way handshake would 
+be complete and the TCP connection would be fully established.
